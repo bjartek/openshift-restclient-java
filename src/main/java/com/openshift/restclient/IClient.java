@@ -180,7 +180,6 @@ public interface IClient extends ICapable, Cloneable {
 	<T extends IResource> T execute(String httpMethod, String kind, String namespace, String name, String subresource, IResource payload, String subcontext);
 	
 	/**
-	 * @param subcontext   additional subContext
 	 * @param factory     The factory to use for interpreting the response
 	 * @param httpMethod  HttpMethod (e.g. POST)
 	 * @param kind
@@ -188,6 +187,7 @@ public interface IClient extends ICapable, Cloneable {
 	 * @param name
 	 * @param subresource  subresource or capability
 	 * @param payload      the payload to sumit.  only valid on non-get operations
+	 * @param subContext   additional subContext
 	 * @param params
      * @return the raw payload string
 	 */
