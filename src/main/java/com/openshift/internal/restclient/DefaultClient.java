@@ -151,7 +151,7 @@ public class DefaultClient implements IClient, IHttpConstants{
 		return items;
 	}
 
-	
+
 	@Override
 	public Collection<IResource> create(IList list, String namespace){
 		List<IResource> results = new ArrayList<IResource>(list.getItems().size());
@@ -200,13 +200,13 @@ public class DefaultClient implements IClient, IHttpConstants{
 	public <T extends IResource> T execute(String method, String kind, String namespace, String name, String subresource, IResource payload, String subContext) {
 		return (T) execute(this.factory, method, kind, namespace, name, subresource, subContext, payload,
 				Collections.emptyMap());
-	}	
+	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T extends IResource> T execute(String method, String kind, String namespace, String name, String subresource, IResource payload) {
 		return (T) execute(this.factory, method, kind, namespace, name, subresource, null, payload,
-				Collections.emptyMap());
+            Collections.emptyMap());
 	}
 
     @Override
@@ -214,6 +214,7 @@ public class DefaultClient implements IClient, IHttpConstants{
     public <T extends IResource> T execute(String method, String kind, String namespace, String name, String subresource, IResource payload, Map<String, String> params) {
 		return (T) execute(this.factory, method, kind, namespace, name, subresource, null, payload,params);
     }
+
 	@SuppressWarnings("unchecked")
 	public <T> T execute(ITypeFactory factory, String method, String kind, String namespace, String name,
         String subresource, String subContext, JSONSerializeable payload, Map<String, String> params) {
@@ -222,10 +223,10 @@ public class DefaultClient implements IClient, IHttpConstants{
 		}
 
 		if(params == null){
-			params = Collections.emptyMap();
-		}
+		    params = Collections.emptyMap();
+        }
 
-		if(ResourceKind.LIST.equals(kind)) 
+		if(ResourceKind.LIST.equals(kind))
 			throw new UnsupportedOperationException("Generic create operation not supported for resource type 'List'");
 		final URL endpoint = new URLBuilder(this.baseUrl, typeMapper)
 				.kind(kind)
@@ -233,7 +234,7 @@ public class DefaultClient implements IClient, IHttpConstants{
 				.namespace(namespace)
 				.subresource(subresource)
 				.subContext(subContext)
- 				.addParameters(params)
+               .addParameters(params)
 				.build();
 			
 		try {

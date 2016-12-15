@@ -37,6 +37,7 @@ public interface IClient extends ICapable, Cloneable {
 	 * @return
 	 */
 	<T extends IResource> List<T> list(String kind);
+
 	
 	/**
 	 * Lists the given given resource kind scoping it to a specific namespace
@@ -49,7 +50,7 @@ public interface IClient extends ICapable, Cloneable {
 	
 	/**
 	 * Lists the given given resource kind scoping it to a specific namespace
-	 *
+	 * 
 	 * @param kind
 	 * @param namespace    The namespace to scope the possible results of this list
 	 * @param labels             The label used to filter the resource
@@ -68,7 +69,7 @@ public interface IClient extends ICapable, Cloneable {
 	<T extends IResource> List<T> list(String kind, String namespace, String labelQuery);
 
 	/**
-	 * 
+	 *
 	 * @param kind
 	 * @param name
 	 * @param namespace
@@ -179,6 +180,7 @@ public interface IClient extends ICapable, Cloneable {
 	<T extends IResource> T execute(String httpMethod, String kind, String namespace, String name, String subresource, IResource payload, String subcontext);
 	
 	/**
+	 * @param subcontext   additional subContext
 	 * @param factory     The factory to use for interpreting the response
 	 * @param httpMethod  HttpMethod (e.g. POST)
 	 * @param kind
@@ -186,13 +188,11 @@ public interface IClient extends ICapable, Cloneable {
 	 * @param name
 	 * @param subresource  subresource or capability
 	 * @param payload      the payload to sumit.  only valid on non-get operations
-	 * @param subContext   additional subContext
 	 * @param params
-	 * @return the raw payload string
+     * @return the raw payload string
 	 */
 	<T extends Object> T execute(ITypeFactory factory, String httpMethod, String kind, String namespace, String name,
-								 String subresource, String subContext, JSONSerializeable payload,
-								 Map<String, String> params);
+        String subresource, String subContext, JSONSerializeable payload, Map<String, String> params);
 
 	/**
 	 * 
