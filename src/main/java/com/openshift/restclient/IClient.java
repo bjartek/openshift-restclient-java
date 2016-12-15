@@ -49,7 +49,7 @@ public interface IClient extends ICapable, Cloneable {
 	
 	/**
 	 * Lists the given given resource kind scoping it to a specific namespace
-	 * 
+	 *
 	 * @param kind
 	 * @param namespace    The namespace to scope the possible results of this list
 	 * @param labels             The label used to filter the resource
