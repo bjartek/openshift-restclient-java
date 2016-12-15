@@ -37,7 +37,6 @@ public interface IClient extends ICapable, Cloneable {
 	 * @return
 	 */
 	<T extends IResource> List<T> list(String kind);
-
 	
 	/**
 	 * Lists the given given resource kind scoping it to a specific namespace
@@ -189,10 +188,11 @@ public interface IClient extends ICapable, Cloneable {
 	 * @param payload      the payload to sumit.  only valid on non-get operations
 	 * @param subContext   additional subContext
 	 * @param params
-     * @return the raw payload string
+	 * @return the raw payload string
 	 */
 	<T extends Object> T execute(ITypeFactory factory, String httpMethod, String kind, String namespace, String name,
-        String subresource, String subContext, JSONSerializeable payload, Map<String, String> params);
+								 String subresource, String subContext, JSONSerializeable payload,
+								 Map<String, String> params);
 
 	/**
 	 * 
