@@ -128,7 +128,7 @@ public class DefaultClient implements IClient, IHttpConstants{
 	public <T extends IResource> List<T> list(String kind, String namespace, Map<String, String> labels) {
 
 		String labelQuery="";
-		if(!labels.isEmpty()){
+		if(labels != null && !labels.isEmpty()){
 			 labelQuery = labels.entrySet().stream()
 					.map(e -> e.getKey() + "=" + e.getValue())
 					.collect(joining(","));
@@ -141,7 +141,7 @@ public class DefaultClient implements IClient, IHttpConstants{
 	public <T extends IResource> List<T> list(String kind, String namespace, String labelQuery) {
 
 		Map<String, String> params = new HashMap<>();
-		if(!labelQuery.isEmpty()){
+		if(labelQuery != null && !labelQuery.isEmpty()){
 			params.put("labelSelector", labelQuery);
 		}
 
