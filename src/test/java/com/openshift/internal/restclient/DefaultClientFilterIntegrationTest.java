@@ -1,5 +1,6 @@
 package com.openshift.internal.restclient;
 
+import com.openshift.internal.restclient.model.BuildConfig;
 import com.openshift.internal.restclient.model.build.BuildConfigBuilder;
 import com.openshift.internal.restclient.model.project.OpenshiftProjectRequest;
 import com.openshift.restclient.IClient;
@@ -8,6 +9,9 @@ import com.openshift.restclient.ResourceKind;
 import com.openshift.restclient.model.IBuildConfig;
 import com.openshift.restclient.model.IProject;
 import com.openshift.restclient.model.IResource;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +29,17 @@ public class DefaultClientFilterIntegrationTest {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DefaultClientFilterIntegrationTest.class);
 
+	private IClient client;
+
+	private IResourceFactory factory;
+
+	private List<IBuildConfig> buildConfigs = new ArrayList();
+	private IProject project;
+
+	private IntegrationTestHelper helper = new IntegrationTestHelper();
+
+	@BeforeClass
+	public void setup() {
 	private static IClient client;
 
 	private static IResourceFactory factory;
@@ -42,29 +57,32 @@ public class DefaultClientFilterIntegrationTest {
 		projectRequest.setName(helper.generateNamespace());
 		project = (IProject) client.create(projectRequest);
 
-		createBuildConfigWithLabels(project, "build1", new HashMap<String, String>() {{
+
+		createBuildConfigWithLabels(project, "build4", new HashMap<>());
+		buildConfigs.add(createBuildConfigWithLabels(project, "build1", new HashMap<String, String>() {{
 			put("foo", "yes");
 			put("bar", "no");
 			put("baz", "no");
-		}});
+		}}));
 
-		createBuildConfigWithLabels(project, "build2", new HashMap<String, String>() {{
+		buildConfigs.add(createBuildConfigWithLabels(project, "build2", new HashMap<String, String>() {{
 			put("foo", "no");
 			put("bar", "yes");
 
-		}});
+		}}));
 
-		createBuildConfigWithLabels(project, "build3", new HashMap<String, String>() {{
+		buildConfigs.add(createBuildConfigWithLabels(project, "build3", new HashMap<String, String>() {{
 			put("foo", "yes");
 			put("bar", "yes");
-		}});
+		}}));
 
-		createBuildConfigWithLabels(project, "build4", new HashMap<>());
+		buildConfigs.add(createBuildConfigWithLabels(project, "build4", new HashMap<>()));
 
 	}
 
 	@AfterClass
 	public static void cleanup() {
+		buildConfigs.forEach(bc -> cleanUpResource(client, bc));
 		cleanUpResource(client, project);
 	}
 
@@ -107,25 +125,21 @@ public class DefaultClientFilterIntegrationTest {
 		List<IBuildConfig> list =
 				client.list(BUILD_CONFIG, project.getNamespace(), "!baz");
 
+		assertEquals(2, list.size());
 		Set<String> names = list.stream().map(IResource::getName).collect(Collectors.toSet());
-
-		assertEquals(3, list.size());
 		assertTrue("Should contain build2", names.contains("build2"));
 		assertTrue("Should contain build3", names.contains("build3"));
-		assertTrue("Should contain build4", names.contains("build4"));
 
 	}
 
 	@Test
 	public void testFilteringWithLabelNotEqualTo() {
-		List<IBuildConfig> list = client.list(BUILD_CONFIG, project.getNamespace(), "foo != yes");
+		List<IBuildConfig> list = client.list(BUILD_CONFIG, project.getNamespace(), "foo!=yes");
 
-
-		Set<String> names = list.stream().map(IResource::getName).collect(Collectors.toSet());
-
-		assertEquals(2, list.size());
-		assertTrue("Should contain build2", names.contains("build2"));
-		assertTrue("Should contain build4", names.contains("build4"));	}
+		assertEquals(1, list.size());
+		IBuildConfig bc = list.get(0);
+		assertEquals("build2", bc.getName());
+	}
 
 	@Test
 	public void testFilteringWithLabelCombinedLabelQuery() {
@@ -138,18 +152,18 @@ public class DefaultClientFilterIntegrationTest {
 
 
 
-	private static IBuildConfig createBuildConfigWithLabels(IProject project, String name, HashMap<String, String> labelFilter) {
-
-		IBuildConfig bc = new BuildConfigBuilder(client)
-				.named(name)
-				.inNamespace(project.getNamespace())
-				.usingSourceStrategy()
-				.fromDockerImage("centos/ruby-22-centos7:latest")
-				.end()
-				.toImageStreamTag("ruby-hello-world:latest")
-				.withLabels(labelFilter)
-				.build();
-		return client.create(bc);
+	private BuildConfig createBuildConfigWithLabels(IProject project, String name, HashMap<String, String> labelFilter) {
+		BuildConfig bc = factory.stub(BUILD_CONFIG, name);
+		if (labelFilter != null && !labelFilter.isEmpty()) {
+			for (Map.Entry<String, String> label : labelFilter.entrySet()) {
+				bc.addLabel(label.getKey(), label.getValue());
+			}
+		}
+		bc = client.create(bc, project.getNamespace());
+		assertNotNull("Exp. the bc to be found but was not",
+				waitForResource(client, BUILD_CONFIG, project.getName(), bc.getName(),
+						5 * MILLISECONDS_PER_SECOND));
+		return bc;
 	}
 
 }
