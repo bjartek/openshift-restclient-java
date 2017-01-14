@@ -140,7 +140,7 @@ public class URLBuilder {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private void buildWithNamespaceInPath(StringBuilder url) {
 		if(!typeMappings.isSupported(apiVersion, kind)) {
 			throw new UnsupportedEndpointException("Unable to determine the api endpoint for kind '%s'", kind);
@@ -148,10 +148,7 @@ public class URLBuilder {
 		url.append("/");
 		IVersionedApiResource apiResource = typeMappings.getEndpointFor(apiVersion, kind);
 		url.append(apiResource.getPrefix()).append("/").append(apiResource.getVersion());
-		if(namespace == null && apiResource.isNamespaced()) {
-			throw new OpenShiftException("The api endpoint for kind '%s' requires a namespace", kind);
-		}
-		if(apiResource.isNamespaced()) {
+		if(namespace != null) {
 			url.append("/namespaces/")
 				.append(namespace);
 		}

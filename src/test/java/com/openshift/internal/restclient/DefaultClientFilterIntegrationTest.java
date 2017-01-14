@@ -8,7 +8,9 @@ import com.openshift.restclient.ResourceKind;
 import com.openshift.restclient.model.IBuildConfig;
 import com.openshift.restclient.model.IProject;
 import com.openshift.restclient.model.IResource;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +31,12 @@ public class DefaultClientFilterIntegrationTest {
 
 	private static IResourceFactory factory;
 
+	private static List<IBuildConfig> buildConfigs = new ArrayList();
 	private static IProject project;
 
 	private static IntegrationTestHelper helper = new IntegrationTestHelper();
+
+
 
 	@BeforeClass
 	public static void  setup() {
@@ -42,29 +47,30 @@ public class DefaultClientFilterIntegrationTest {
 		projectRequest.setName(helper.generateNamespace());
 		project = (IProject) client.create(projectRequest);
 
-		createBuildConfigWithLabels(project, "build1", new HashMap<String, String>() {{
+		buildConfigs.add(createBuildConfigWithLabels(project, "build1", new HashMap<String, String>() {{
 			put("foo", "yes");
 			put("bar", "no");
 			put("baz", "no");
-		}});
+		}}));
 
-		createBuildConfigWithLabels(project, "build2", new HashMap<String, String>() {{
+		buildConfigs.add(createBuildConfigWithLabels(project, "build2", new HashMap<String, String>() {{
 			put("foo", "no");
 			put("bar", "yes");
 
-		}});
+		}}));
 
-		createBuildConfigWithLabels(project, "build3", new HashMap<String, String>() {{
+		buildConfigs.add(createBuildConfigWithLabels(project, "build3", new HashMap<String, String>() {{
 			put("foo", "yes");
 			put("bar", "yes");
-		}});
+		}}));
 
-		createBuildConfigWithLabels(project, "build4", new HashMap<>());
+		buildConfigs.add(createBuildConfigWithLabels(project, "build4", new HashMap<>()));
 
 	}
 
 	@AfterClass
 	public static void cleanup() {
+		buildConfigs.forEach(bc -> cleanUpResource(client, bc));
 		cleanUpResource(client, project);
 	}
 
@@ -107,25 +113,24 @@ public class DefaultClientFilterIntegrationTest {
 		List<IBuildConfig> list =
 				client.list(BUILD_CONFIG, project.getNamespace(), "!baz");
 
-		Set<String> names = list.stream().map(IResource::getName).collect(Collectors.toSet());
-
 		assertEquals(3, list.size());
+		Set<String> names = list.stream().map(IResource::getName).collect(Collectors.toSet());
 		assertTrue("Should contain build2", names.contains("build2"));
 		assertTrue("Should contain build3", names.contains("build3"));
 		assertTrue("Should contain build4", names.contains("build4"));
+
 
 	}
 
 	@Test
 	public void testFilteringWithLabelNotEqualTo() {
-		List<IBuildConfig> list = client.list(BUILD_CONFIG, project.getNamespace(), "foo != yes");
-
-
-		Set<String> names = list.stream().map(IResource::getName).collect(Collectors.toSet());
+		List<IBuildConfig> list = client.list(BUILD_CONFIG, project.getNamespace(), "foo!=yes");
 
 		assertEquals(2, list.size());
+		Set<String> names = list.stream().map(IResource::getName).collect(Collectors.toSet());
 		assertTrue("Should contain build2", names.contains("build2"));
-		assertTrue("Should contain build4", names.contains("build4"));	}
+		assertTrue("Should contain build4", names.contains("build4"));
+	}
 
 	@Test
 	public void testFilteringWithLabelCombinedLabelQuery() {
@@ -143,13 +148,28 @@ public class DefaultClientFilterIntegrationTest {
 		IBuildConfig bc = new BuildConfigBuilder(client)
 				.named(name)
 				.inNamespace(project.getNamespace())
-				.usingSourceStrategy()
-				.fromDockerImage("centos/ruby-22-centos7:latest")
+				.buildOnConfigChange(true)
+				.buildOnImageChange(true)
+				.buildOnSourceChange(true)
+				.fromGitSource()
+				.fromGitUrl("https://foo/bar/repo.git")
+				.usingGitReference("branch")
+				.inContextDir("root/directory")
 				.end()
-				.toImageStreamTag("ruby-hello-world:latest")
+				.usingSourceStrategy()
+				.fromImageStreamTag("builder:latest")
+				.inNamespace("other")
+				.end()
+				.toImageStreamTag("foo/target:latest")
 				.withLabels(labelFilter)
 				.build();
-		return client.create(bc);
+
+
+		bc = client.create(bc);
+		assertNotNull("Exp. the bc to be found but was not",
+				waitForResource(client, BUILD_CONFIG, project.getName(), bc.getName(),
+						5 * MILLISECONDS_PER_SECOND));
+		return bc;
 	}
 
 }
